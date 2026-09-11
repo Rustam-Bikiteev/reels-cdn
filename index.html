@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>reels-cdn</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; background:#111; color:#eee;
+         display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0; padding:24px; }
+  .box { max-width:640px; text-align:center; }
+  h1 { font-size:18px; font-weight:600; color:#999; margin:0 0 20px; }
+  h1.err { color:#ff7b72; }
+  code { display:block; white-space:pre-wrap; word-break:break-all; background:#1e1e1e;
+         border:1px solid #333; border-radius:8px; padding:16px; font-size:15px;
+         line-height:1.5; color:#7ee787; text-align:left; }
+  button { margin-top:16px; padding:10px 20px; border:0; border-radius:8px;
+           background:#7ee787; color:#111; font-size:15px; font-weight:600; cursor:pointer; }
+  p { color:#777; font-size:14px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="box" id="root"></div>
+<script>
+  // Instagram кладёт результат либо в query, либо (при ошибке) во фрагмент
+  const params = new URLSearchParams(location.search || location.hash.replace(/^#/, '?'));
+  const code = params.get('code');
+  const root = document.getElementById('root');
+
+  const show = (html) => { root.innerHTML = html; };
+  const copyable = (id, value) => {
+    document.getElementById(id).textContent = value;
+    const b = document.getElementById(id + '_btn');
+    if (b) b.onclick = () => { navigator.clipboard.writeText(value); b.textContent = 'Скопировано'; };
+  };
+
+  if (code) {
+    const clean = code.replace(/#_$/, '');
+    show(
+      '<h1>Код авторизации Instagram</h1>' +
+      '<code id="c"></code>' +
+      '<button id="c_btn">Скопировать</button>' +
+      '<p>Дальше в терминале:<br><b>node auth.mjs code &lt;этот код&gt;</b><br>Код одноразовый и живёт около часа.</p>'
+    );
+    copyable('c', clean);
+  } else if (params.get('error') || params.get('error_message')) {
+    const parts = [];
+    for (const [k, v] of params) parts.push(k + ' = ' + v);
+    show(
+      '<h1 class="err">Instagram отказал в авторизации</h1>' +
+      '<code id="e"></code>' +
+      '<button id="e_btn">Скопировать</button>' +
+      '<p>Пришли этот текст в чат — по нему видно причину отказа.</p>'
+    );
+    copyable('e', parts.join('\n'));
+  } else if (location.search || location.hash.length > 1) {
+    const parts = [];
+    for (const [k, v] of params) parts.push(k + ' = ' + v);
+    show(
+      '<h1 class="err">Ответ без кода</h1>' +
+      '<code id="u"></code>' +
+      '<button id="u_btn">Скопировать</button>' +
+      '<p>Instagram вернул параметры, но кода среди них нет. Пришли это в чат.</p>'
+    );
+    copyable('u', parts.length ? parts.join('\n') : location.href);
+  } else {
+    show(
+      '<h1>reels-cdn</h1>' +
+      '<p>Технический хост для временных файлов при публикации рилсов.<br>Смотреть тут нечего.</p>' +
+      '<p>Если ты попал сюда после авторизации Instagram и видишь этот текст — значит Instagram ' +
+      'перенаправил без параметров. Проверь, что открывал именно ссылку авторизации, и пришли в чат ' +
+      'адрес из строки браузера целиком.</p>'
+    );
+  }
+</script>
+</body>
+</html>
